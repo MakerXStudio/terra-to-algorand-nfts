@@ -8,6 +8,8 @@ The cool thing about Algorand NFTs is assets (FTs and NFTs) are a [first-class c
 
 The script in this project will mint against a local emulator by default, but the config can change to point to TestNet and MainNet. Once you mint against MainNet you can check out your collection at [NFT Explorer](https://www.nftexplorer.app/).
 
+**Note:** In order to mint, you need to hold a minimum balance in the minting account of 0.1 ALGO per each asset minted (+ 0.1 ALGOs as the minium balance to have an active account) and each minting transaction will cost 0.001 ALGOs. So if you have 1000 NFTs your minting account will need to have at least 110.100 ALGOs.
+
 After converting your NFTs to Algorand Standard Assets, the next step to migrate is to collect Algorand addresses for every Terra NFT holder so you can transfer their NFT(s) to them, noting they will have to opt-in to those assets first. A useful tool to guide them through that process is you can create a transfer via https://swapper.tools/. If you have hundreds or thousands of NFTs you might want to come up with a more programmatic option. If you want to get help with such a solution feel free to reach out to cto@makerx.com.au.
 
 # Developer setup
