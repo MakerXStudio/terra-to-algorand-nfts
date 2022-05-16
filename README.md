@@ -19,7 +19,7 @@ This project helps you automate the process of converting a Terra CW721 NFT proj
 
    - If you want to re-start the environment after say restarting your machine or pulling latest changes you can run `update.ps1`
 
-### Regardless of whether minting agaisnt local Algorand emulator or not
+### Regardless of whether minting against local Algorand emulator or not
 
 1. Open in VS Code (or your IDE of choice, although you'll get a better developer experience in VS Code since there are run and debug configurations and settings specified)
 2. Install recommended extensions
