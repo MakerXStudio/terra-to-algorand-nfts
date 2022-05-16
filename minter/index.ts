@@ -14,9 +14,12 @@ import {
 import { getAlgoClient, getIndexerClient } from './functions/client'
 import { handleError } from './functions/error'
 
-// Terra metadata conversion
+/*********************************/
+/**** Terra metadata - edit this */
+/*********************************/
 const contractId = 'terra1trn7mhgc9e2wfkm5mhr65p3eu7a2lc526uwny2'
-const getAlgorandMetadata = (nft: TerraNFT) => {
+
+const getAlgorandMetadata = (nft: TerraNFT, contract: TerraContract) => {
   const properties: Record<string, string> = {}
   nft.result.extension.attributes.forEach((a) => {
     properties[a.trait_type] = a.value
@@ -25,7 +28,7 @@ const getAlgorandMetadata = (nft: TerraNFT) => {
   return {
     mutableMetadata: false,
     name: nft.result.extension.name,
-    unitName: 'BULLS',
+    unitName: contract.result.init_msg.symbol,
     mediaType: MediaType.Image,
     url: nft.result.extension.image,
     description: nft.result.extension.description || undefined,
@@ -33,6 +36,8 @@ const getAlgorandMetadata = (nft: TerraNFT) => {
     properties: properties,
   }
 }
+/**** End of Terra metadata ******/
+/*********************************/
 
 if (!fs.existsSync('.env') && !process.env.ALGOD_SERVER) {
   console.error('Copy .env.sample to .env before starting the application.')
@@ -44,6 +49,10 @@ if (!fs.existsSync('.env') && !process.env.ALGOD_SERVER) {
     const indexer = await getIndexerClient()
     const creatorAccount = await getAccount(client, CREATOR_ACCOUNT)
 
+    const contractInfo = await getTerraContractInfo(contractId)
+
+    console.log(`Migrating NFTs for ${contractInfo.result.init_msg.name}`)
+
     const existingNFTs = await getTerraNFTs(contractId)
 
     for (let token of existingNFTs.result.tokens) {
@@ -51,7 +60,7 @@ if (!fs.existsSync('.env') && !process.env.ALGOD_SERVER) {
 
       console.log(`Found ${nftInfoResponse.result.extension.name}; attempting to convert to Algorand NFT...`)
 
-      const m = getAlgorandMetadata(nftInfoResponse)
+      const m = getAlgorandMetadata(nftInfoResponse, contractInfo)
 
       // Careful: There is a 1000 byte limit for the JSON version of this structure
       const metadata: Arc69Metadata = {
@@ -81,6 +90,25 @@ if (!fs.existsSync('.env') && !process.env.ALGOD_SERVER) {
     process.exit(1)
   }
 })()
+
+interface TerraContract {
+  height: string
+  result: {
+    address: string
+    creator: string
+    code_id: string
+    init_msg: {
+      name: string
+      symbol: string
+      minter: string
+    }
+  }
+}
+
+async function getTerraContractInfo(contractId: string): Promise<TerraContract> {
+  const contractInfoRequest = await fetch(`https://fcd.terra.dev/wasm/contracts/${contractId}`)
+  return await contractInfoRequest.json()
+}
 
 async function getTerraNFTs(contractId: string): Promise<{ result: { tokens: string[] } }> {
   const allTokensQuery = { all_tokens: {} }

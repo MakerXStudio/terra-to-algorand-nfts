@@ -1,5 +1,5 @@
 import algosdk, { Account, Algodv2 } from 'algosdk'
-import { FUNDING_ACCOUNT } from '../constants'
+import { DISPENSER_ACCOUNT } from '../constants'
 import { getKmdClient } from './client'
 import { isReachSandbox, isSandbox } from './network'
 import { transfer } from './transfer'
@@ -9,6 +9,66 @@ export const ZERO_ADDRESS = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
 export function getAccountFromMnemonic(mnemonic: string): Account {
   return algosdk.mnemonicToSecretKey(mnemonic)
+}
+
+export async function getOrCreateKmdWalletAccount(client: Algodv2, name: string): Promise<Account> {
+  const existing = await getKmdWalletAccount(client, name)
+  if (existing) {
+    return existing
+  }
+
+  const kmd = getKmdClient()
+  const walletId = (await kmd.createWallet(name, '')).wallet.id
+  const walletHandle = (await kmd.initWalletHandle(walletId, '')).wallet_handle_token
+  await kmd.generateKey(walletHandle)
+
+  const account = (await getKmdWalletAccount(client, name))!
+
+  await transfer(
+    { amount: algosdk.algosToMicroalgos(10), from: await getDispenserAccount(client), to: account.addr },
+    client
+  )
+
+  return account
+}
+
+export async function getKmdWalletAccount(
+  client: Algodv2,
+  name: string,
+  predicate?: (account: Record<string, any>) => boolean
+): Promise<Account | undefined> {
+  const kmd = getKmdClient()
+  const wallets = await kmd.listWallets()
+
+  const wallet = wallets.wallets.filter((w: any) => w.name === name)
+  if (wallet.length === 0) {
+    return undefined
+  }
+
+  const walletId = wallet[0].id
+
+  const walletHandle = (await kmd.initWalletHandle(walletId, '')).wallet_handle_token
+  const keyIds = (await kmd.listKeys(walletHandle)).addresses
+
+  let i = 0
+  if (predicate) {
+    for (i = 0; i < keyIds.length; i++) {
+      const key = keyIds[i]
+      const account = await client.accountInformation(key).do()
+      if (predicate(account)) {
+        break
+      }
+    }
+  }
+
+  if (i >= keyIds.length) {
+    return undefined
+  }
+
+  const accountKey = (await kmd.exportKey(walletHandle, '', keyIds[i])).private_key
+
+  const accountMnemonic = algosdk.secretKeyToMnemonic(accountKey)
+  return getAccountFromMnemonic(accountMnemonic)
 }
 
 export async function getSandboxDefaultAccount(client: Algodv2): Promise<Account> {
@@ -23,29 +83,13 @@ export async function getSandboxDefaultAccount(client: Algodv2): Promise<Account
     )
   }
 
-  const kmd = getKmdClient()
-  const wallets = await kmd.listWallets()
-
   // Sandbox starts with a single wallet called 'unencrypted-default-wallet', with heaps of tokens
-  const defaultWalletId = wallets.wallets.filter((w: any) => w.name === 'unencrypted-default-wallet')[0].id
-
-  const defaultWalletHandle = (await kmd.initWalletHandle(defaultWalletId, '')).wallet_handle_token
-  const defaultKeyIds = (await kmd.listKeys(defaultWalletHandle)).addresses
-
-  // When you create accounts using goal they get added to this wallet so check for an account that's actually a default account
-  let i = 0
-  for (i = 0; i < defaultKeyIds.length; i++) {
-    const key = defaultKeyIds[i]
-    const account = await client.accountInformation(key).do()
-    if (account.status !== 'Offline' && account.amount > 1000_000_000) {
-      break
-    }
-  }
-
-  const defaultAccountKey = (await kmd.exportKey(defaultWalletHandle, '', defaultKeyIds[i])).private_key
-
-  const defaultAccountMnemonic = algosdk.secretKeyToMnemonic(defaultAccountKey)
-  return getAccountFromMnemonic(defaultAccountMnemonic)
+  // When you create accounts using goal they get added to this wallet so check for an account with lots of ALGOs
+  return (await getKmdWalletAccount(
+    client,
+    'unencrypted-default-wallet',
+    (a) => a.status !== 'Offline' && a.amount > 1000_000_000
+  ))!
 }
 
 export async function getAccount(client: Algodv2, name: string): Promise<Account> {
@@ -54,9 +98,9 @@ export async function getAccount(client: Algodv2, name: string): Promise<Account
     return getAccountFromMnemonic(process.env[envKey]!)
   }
 
+  // If running on Sandbox then automatically and idempotently generate an account
   if (await isSandbox(client)) {
-    console.log(`Generating test account for account ${name}`)
-    const account = await getTestAccount({ client, initialFundsInAlgos: 10 })
+    const account = await getOrCreateKmdWalletAccount(client, name)
     process.env[envKey] = algosdk.secretKeyToMnemonic(account.sk)
     return account
   }
@@ -90,11 +134,7 @@ export async function getTestAccount({
     )
   }
 
-  // If we are running against a sandbox we can use the default account within it, otherwise use an automation account specified via environment variables and ensure it's populated with ALGOs
-  const canFundFromDefaultAccount = await isSandbox(client)
-  const dispenser = canFundFromDefaultAccount
-    ? await getSandboxDefaultAccount(client)
-    : await getAccount(client, FUNDING_ACCOUNT)
+  const dispenser = await getDispenserAccount(client)
 
   const txn = await transfer(
     { from: dispenser, to: account.addr, amount: initialFundsInMicroAlgos!, note: 'Funding test account' },
@@ -107,6 +147,14 @@ export async function getTestAccount({
   }
 
   return account
+}
+
+export async function getDispenserAccount(client: Algodv2) {
+  // If we are running against a sandbox we can use the default account within it, otherwise use an automation account specified via environment variables and ensure it's populated with ALGOs
+  const canFundFromDefaultAccount = await isSandbox(client)
+  return canFundFromDefaultAccount
+    ? await getSandboxDefaultAccount(client)
+    : await getAccount(client, DISPENSER_ACCOUNT)
 }
 
 export function getAccountAddressAsUint8Array(account: Account) {

@@ -162,21 +162,16 @@ if (-not $SkipNode) {
 }
 
 # Set up file permissions for node_modules
-Write-Header "Setting up file permissions so normal users can rwx in node_modules (multiple)"
-New-Item -ItemType Directory -Force -Path node_modules
+Write-Header "Setting up file permissions so normal users can rwx in node_modules"
 New-Item -ItemType Directory -Force -Path minter/node_modules
 if ($IsWindows) {
-  icacls node_modules /grant everyone:f
   icacls minter/node_modules /grant everyone:f
 } else {
-  chmod 777 node_modules
   chmod 777 minter/node_modules
 }
 
 # Install various npm dependencies
-Write-Header "npm install (multiple)"
-$process = Start-Process "npm" -ArgumentList "install" -Wait -NoNewWindow -PassThru
-Test-ThrowIfNotSuccessful -exitCode $process.ExitCode
+Write-Header "npm install"
 $process = Start-Process "npm" -ArgumentList "install" -WorkingDirectory "minter" -Wait -NoNewWindow -PassThru
 Test-ThrowIfNotSuccessful -exitCode $process.ExitCode
 

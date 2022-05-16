@@ -42,10 +42,9 @@ if ($PSCmdlet.ShouldProcess("Clear environment")) {
   Test-ThrowIfNotSuccessful
   docker-compose rm -f
   Test-ThrowIfNotSuccessful
-  Write-Header "Deleting node_modules (multiple)"
-  Remove-Folder "node_modules"
+  Write-Header "Deleting node_modules"
   Remove-Folder "minter/node_modules"
-  Write-Header "Deleting build (multiple)"
+  Write-Header "Deleting build"
   Remove-Folder "minter/build"
   Write-Header "Re-setting up environment"
   & ./setup.ps1

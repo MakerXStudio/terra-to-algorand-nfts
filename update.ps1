@@ -33,8 +33,7 @@ Write-Header "Start / update docker containers"
 & docker-compose pull
 & docker-compose up -d
 
-Write-Header "Install npm packages (multiple)"
-Start-Process "npm" -ArgumentList "install" -Wait -NoNewWindow -PassThru
+Write-Header "Install npm packages"
 Start-Process "npm" -ArgumentList "install" -WorkingDirectory "minter" -Wait -NoNewWindow -PassThru
 
 Pop-Location

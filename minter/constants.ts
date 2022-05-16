@@ -1,2 +1,2 @@
-export const FUNDING_ACCOUNT = 'FUND'
+export const DISPENSER_ACCOUNT = 'DISPENSER'
 export const CREATOR_ACCOUNT = 'CREATOR'
