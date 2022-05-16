@@ -2,6 +2,14 @@
 
 This project helps you automate the process of converting a Terra CW721 NFT project into an Algorand ARC69 NFT project.
 
+The cool thing about Algorand NFTs is assets (FTs and NFTs) are a [first-class concept](https://www.algorand.com/technology) ([technical detail](https://developer.algorand.org/docs/get-details/asa/)); you don't need to write Smart Contract code to mint NFTs (unless you're doing something really fancy). This project queries Terra for all NFTs minted by a given CW721 contract, converts the metadata to ARC69 format and then mints them as an Algorand Standard Asset with total of 1 and decimals of 0 (i.e. an NFT).
+
+[ARC69](https://arc69.com/) is an on-chain way of representing NFT metadata (including traits). If you instead want to use IPFS to store the NFT metadata, then you can use [ARC3](https://github.com/algorandfoundation/ARCs/blob/main/ARCs/arc-0003.md) instead (with a slight tweak to this codebase); just check that the format of your IPFS metadata document meets the ARC3 spec.
+
+The script in this project will mint against a local emulator by default, but the config can change to point to TestNet and MainNet. Once you mint against MainNet you can check out your collection at [NFT Explorer](https://www.nftexplorer.app/).
+
+After converting your NFTs to Algorand Standard Assets, the next step to migrate is to collect Algorand addresses for every Terra NFT holder so you can transfer their NFT(s) to them, noting they will have to opt-in to those assets first. A useful tool to guide them through that process is you can create a transfer via https://swapper.tools/. If you have hundreds or thousands of NFTs you might want to come up with a more programmatic option. If you want to get help with such a solution feel free to reach out to cto@makerx.com.au.
+
 # Developer setup
 
 ## First time setup
