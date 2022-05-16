@@ -34,7 +34,6 @@ After converting your NFTs to Algorand Standard Assets, the next step to migrate
 3. Inside `minter`:
 
    - Copy `.env.sample` to `.env` and fill in the relevant variables depending on whether you want to test against either the local sandbox or Algorand TestNet (e.g. via [AlgoNode](https://algonode.io/api/) or via [PureStake](https://purestake.io/), for which you would need to [create an account](https://developer.purestake.io/signup))
-   - If developing against Algorand TestNet you'll need to add a mnemonic value for ``
    - Run `npm install`
 
 4. (If using VS Code) Choose the thing you want to run/debug from the "Run and Debug" pane (ctrl+shift+D on Windows) and hit F5 and it will launch it with breakpoint debugging
