@@ -14,7 +14,9 @@ After converting your NFTs to Algorand Standard Assets, the next step to migrate
 
 ## First time setup
 
-### If you want to mint against a local Algorand emulator
+### If you want to mint against a local Algorand emulator (recommended)
+
+We recommend you first execute this against a locally running Algorand sandbox node so that you can check the minting works OK before running against MainNet.
 
 1. Ensure you have Docker Engine and/or Docker Desktop installed
 2. Make sure that you have [Powershell Core (7+)](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell?view=powershell-7.2) installed
@@ -36,7 +38,9 @@ After converting your NFTs to Algorand Standard Assets, the next step to migrate
    - Copy `.env.sample` to `.env` and fill in the relevant variables depending on whether you want to test against either the local sandbox or Algorand TestNet (e.g. via [AlgoNode](https://algonode.io/api/) or via [PureStake](https://purestake.io/), for which you would need to [create an account](https://developer.purestake.io/signup))
    - Run `npm install`
 
-4. (If using VS Code) Choose the thing you want to run/debug from the "Run and Debug" pane (ctrl+shift+D on Windows) and hit F5 and it will launch it with breakpoint debugging
+4. Add the metadata for your NFT project in `minter/index.ts` (look for `/**** Terra metadata - edit this */`)
+
+5. (If using VS Code) Choose the thing you want to run/debug from the "Run and Debug" pane (ctrl+shift+D on Windows) and hit F5 and it will launch it with breakpoint debugging
 
 ## Ongoing development
 
