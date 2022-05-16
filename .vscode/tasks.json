@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "npm: build - /minter",
+      "type": "npm",
+      "script": "build",
+      "path": "${workspaceFolder}/minter",
+      "options": {
+        "cwd": "${workspaceFolder}/minter"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

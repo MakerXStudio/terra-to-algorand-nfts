@@ -1,0 +1,9 @@
+.env
+node_modules
+diagram.dot
+.venv
+_sandbox
+__pycache__
+cache
+.DS_Store
+.idea
