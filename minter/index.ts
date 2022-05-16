@@ -17,7 +17,7 @@ import { handleError } from './functions/error'
 /*********************************/
 /**** Terra metadata - edit this */
 /*********************************/
-const contractId = 'terra1trn7mhgc9e2wfkm5mhr65p3eu7a2lc526uwny2'
+const contractId = 'terra1h6msx3t0qj7fuhssyqc44g20qwwyz35zqel96l'
 
 const getAlgorandMetadata = (nft: TerraNFT, contract: TerraContract) => {
   const properties: Record<string, string> = {}
@@ -55,39 +55,59 @@ if (!fs.existsSync('.env') && !process.env.ALGOD_SERVER) {
 
     console.log(`Migrating NFTs for ${contractInfo.result.init_msg.name}`)
 
-    const existingNFTs = await getTerraNFTs(contractId)
+    let startAfter: string | undefined = undefined
 
-    for (let token of existingNFTs.result.tokens) {
-      let nftInfoResponse: TerraNFT
-      if (typeof token !== 'string') {
-        const metadataRequest = await fetch(token.metadata_uri)
-        const response = (await metadataRequest.json()) as { title: string; description?: string; media: string }
-        nftInfoResponse = {
-          result: {
-            token_uri: token.metadata_uri,
-            extension: {
-              name: response.title,
-              description: response.description,
-              image: response.media.replace('https://ipfs.talis.art/ipfs/', 'ipfs://'),
+    while (true) {
+      const existingNFTs = await getTerraNFTs(contractId, startAfter)
+      console.log(`Retrieved the next ${existingNFTs.result.tokens.length} NFTs from Terra...`)
+
+      if (existingNFTs.result.tokens.length === 0) {
+        break
+      }
+
+      for (let token of existingNFTs.result.tokens) {
+        let nftInfoResponse: TerraNFT
+        if (typeof token !== 'string') {
+          const metadataRequest = await fetch(token.metadata_uri)
+          const response = (await metadataRequest.json()) as { title: string; description?: string; media: string }
+          nftInfoResponse = {
+            result: {
+              token_uri: token.metadata_uri,
+              extension: {
+                name: response.title,
+                description: response.description,
+                image: response.media.replace('https://ipfs.talis.art/ipfs/', 'ipfs://'),
+              },
             },
-          },
+          }
+        } else {
+          nftInfoResponse = await getTerraNFT(contractId, token)
+          if ('error' in nftInfoResponse) {
+            console.error((nftInfoResponse as any).error)
+            process.exit(1)
+          }
+          console.log(`Found ${nftInfoResponse.result.extension.name}; attempting to convert to Algorand NFT...`)
         }
+
+        const m = getAlgorandMetadata(nftInfoResponse, contractInfo)
+
+        // Careful: There is a 1000 byte limit for the JSON version of this structure
+        const metadata: Arc69Metadata = {
+          mediaType: m.mediaType,
+          description: m.description,
+          externalUrl: m.externalUrl,
+          properties: m.properties,
+        }
+
+        await createAlgorandNFT(client, indexer, creatorAccount, m.name, m.unitName, m.url, metadata, m.mutableMetadata)
+      }
+
+      const lastToken = existingNFTs.result.tokens[existingNFTs.result.tokens.length - 1]
+      if (typeof lastToken === 'string') {
+        startAfter = lastToken
       } else {
-        nftInfoResponse = await getTerraNFT(contractId, token)
-        console.log(`Found ${nftInfoResponse.result.extension.name}; attempting to convert to Algorand NFT...`)
+        startAfter = lastToken.token_id
       }
-
-      const m = getAlgorandMetadata(nftInfoResponse, contractInfo)
-
-      // Careful: There is a 1000 byte limit for the JSON version of this structure
-      const metadata: Arc69Metadata = {
-        mediaType: m.mediaType,
-        description: m.description,
-        externalUrl: m.externalUrl,
-        properties: m.properties,
-      }
-
-      await createAlgorandNFT(client, indexer, creatorAccount, m.name, m.unitName, m.url, metadata, m.mutableMetadata)
     }
 
     console.log('---')
@@ -127,7 +147,10 @@ async function getTerraContractInfo(contractId: string): Promise<TerraContract> 
   return await contractInfoRequest.json()
 }
 
-async function getTerraNFTs(contractId: string): Promise<{
+async function getTerraNFTs(
+  contractId: string,
+  startAfter?: string
+): Promise<{
   result: {
     tokens: (
       | string
@@ -139,7 +162,7 @@ async function getTerraNFTs(contractId: string): Promise<{
     )[]
   }
 }> {
-  const allTokensQuery = { all_tokens: {} }
+  const allTokensQuery = { all_tokens: { limit: 10, start_after: startAfter } }
   const allTokensRequest = await fetch(
     `https://fcd.terra.dev/wasm/contracts/${contractId}/store?query_msg=${encodeURIComponent(
       JSON.stringify(allTokensQuery)

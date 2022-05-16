@@ -25,7 +25,7 @@ export async function getOrCreateKmdWalletAccount(client: Algodv2, name: string)
   const account = (await getKmdWalletAccount(client, name))!
 
   await transfer(
-    { amount: algosdk.algosToMicroalgos(10), from: await getDispenserAccount(client), to: account.addr },
+    { amount: algosdk.algosToMicroalgos(1000), from: await getDispenserAccount(client), to: account.addr },
     client
   )
 
