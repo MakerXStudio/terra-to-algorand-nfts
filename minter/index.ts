@@ -17,7 +17,7 @@ import { handleError } from './functions/error'
 /*********************************/
 /**** Terra metadata - edit this */
 /*********************************/
-const contractId = 'terra1htnwk8wcaqlgc9jvfzztgdekhlpvfzdv76cq88'
+const contractId = 'terra1trn7mhgc9e2wfkm5mhr65p3eu7a2lc526uwny2'
 
 const getAlgorandMetadata = (nft: TerraNFT, contract: TerraContract) => {
   const properties: Record<string, string> = {}
