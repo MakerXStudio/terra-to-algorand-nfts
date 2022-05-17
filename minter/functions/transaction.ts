@@ -34,6 +34,45 @@ export interface TransactionToSign {
   signer: Account | LogicSigAccount
 }
 
+export const sendGroupOfTransactions = async function (
+  client: Algodv2,
+  transactions: TransactionToSign[],
+  skipWaiting: boolean = false
+) {
+  const transactionsToSend = transactions.map((t) => t.transaction)
+
+  console.debug('Sending group of transactions', transactionsToSend)
+
+  const signedTransactions = algosdk.assignGroupID(transactionsToSend).map((groupedTransaction, index) => {
+    const signer = transactions[index].signer
+    return 'sk' in signer
+      ? groupedTransaction.signTxn(signer.sk)
+      : algosdk.signLogicSigTransactionObject(groupedTransaction, signer).blob
+  })
+
+  console.debug(
+    'Signer IDs',
+    transactions.map((t) => ('addr' in t.signer ? t.signer.addr : t.signer.address()))
+  )
+
+  console.debug(
+    'Transaction IDs',
+    transactionsToSend.map((t) => t.txID())
+  )
+
+  // https://developer.algorand.org/docs/rest-apis/algod/v2/#post-v2transactions
+  const { txId } = (await client.sendRawTransaction(signedTransactions).do()) as { txId: string }
+
+  console.log(`Group transaction sent with transaction ID ${txId}`)
+
+  let confirmation: PendingTransactionResponse | undefined = undefined
+  if (!skipWaiting) {
+    confirmation = await waitForConfirmation(client, txId, 5)
+  }
+
+  return { txId, confirmation }
+}
+
 // https://developer.algorand.org/docs/rest-apis/algod/v2/#get-v2transactionspendingtxid
 export interface PendingTransactionResponse {
   'pool-error': string
