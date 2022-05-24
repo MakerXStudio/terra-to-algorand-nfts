@@ -1,0 +1,4 @@
+build/
+public/_static
+/app/tailwind.css
+package-lock.json

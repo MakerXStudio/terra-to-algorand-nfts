@@ -1,0 +1,4 @@
+export const NUMBER_OF_ITEMS_IN_A_ROW = 3
+
+export const URL_PARAM_BUYER_NAME = 'collector'
+export const DEFAULT_INDEXER_MAX_API_RESOURCES_PER_ACCOUNT = 1000

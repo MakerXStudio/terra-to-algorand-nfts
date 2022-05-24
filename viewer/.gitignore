@@ -1,0 +1,4 @@
+app/tailwind.css
+.cache
+build/
+public/_static/build

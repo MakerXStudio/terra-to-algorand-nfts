@@ -10,6 +10,19 @@
       "type": "pwa-node",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}/minter"
+    },
+    {
+      // based on https://github.com/remix-run/remix/pull/2065#issuecomment-1079755448
+      "name": "View locally minted NFTs",
+      "request": "launch",
+      "command": "npm run dev",
+      "skipFiles": ["<node_internals>/**"],
+      "cwd": "${workspaceFolder}/viewer",
+      "type": "node-terminal",
+      "outFiles": ["${workspaceFolder}/build/**/*.js"],
+      "sourceMapPathOverrides": {
+        "route:*": "*" // <-- fix up the paths, so route:<path> just becomes <path>
+      }
     }
   ]
 }
