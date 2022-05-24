@@ -38,13 +38,15 @@ export interface Arc69Payload {
 
 export const getArc69Metadata = (metadata: Arc69Metadata) => {
   // https://github.com/algokittens/arc69#json-metadata-file-schema
+  const { description, externalUrl, mediaUrl, properties, assetMimeType, ...extraData } = metadata
   return {
     standard: 'arc69',
-    ...(metadata.description ? { description: metadata.description } : {}),
-    ...(metadata.externalUrl ? { external_url: metadata.externalUrl } : {}),
-    ...(metadata.mediaUrl ? { media_url: metadata.mediaUrl } : {}),
-    ...(metadata.properties ? { properties: metadata.properties } : {}),
-    ...(metadata.assetMimeType ? { mime_type: metadata.assetMimeType } : {}),
+    ...(description ? { description: description } : {}),
+    ...(externalUrl ? { external_url: externalUrl } : {}),
+    ...(mediaUrl ? { media_url: mediaUrl } : {}),
+    ...(properties ? { properties: properties } : {}),
+    ...(assetMimeType ? { mime_type: assetMimeType } : {}),
+    ...extraData,
   } as Arc69Payload
 }
 
