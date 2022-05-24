@@ -168,6 +168,10 @@ export async function createAsset(
 
   const encoder = new TextEncoder()
 
+  if (note && arc69Metadata) {
+    console.warn('Supplied transaction note and ARC-69 metadata; the metadata will get overwritten')
+  }
+
   if (!note && arc69Metadata) {
     // https://github.com/algokittens/arc69#json-metadata-file-schema
     const metadata = getArc69Metadata(arc69Metadata)

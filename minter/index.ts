@@ -1,20 +1,13 @@
 import { Account, Algodv2 } from 'algosdk'
-import IndexerClient from 'algosdk/dist/types/src/client/v2/indexer/indexer'
 import fs from 'fs'
 import fetch from 'node-fetch'
 import path from 'path'
 import { CREATOR_ACCOUNT } from './constants'
 import { getAccount } from './functions/account'
 import { chunkArray } from './functions/array'
-import {
-  Arc69Metadata,
-  CreateAssetParamsBase,
-  createNonFungibleToken,
-  getExistingAssets,
-  MediaType,
-} from './functions/asset'
+import { Arc69Metadata, CreateAssetParamsBase, createNonFungibleToken, MediaType } from './functions/asset'
 import { FileSystemObjectCache } from './functions/cache'
-import { getAlgoClient, getIndexerClient } from './functions/client'
+import { getAlgoClient } from './functions/client'
 import { handleError } from './functions/error'
 import { AssetResult } from './functions/search'
 import { sendGroupOfTransactions } from './functions/transaction'
@@ -36,10 +29,11 @@ if (!fs.existsSync('.env') && !process.env.ALGOD_SERVER) {
   process.exit(1)
 }
 ;(async () => {
+  const start = console.time('Minting')
   try {
     const client = await getAlgoClient()
-    const indexer = await getIndexerClient()
     const creatorAccount = await getAccount(client, CREATOR_ACCOUNT)
+
     const cache = new FileSystemObjectCache(path.join(__dirname, '.cache'))
 
     const contractInfo = await getTerraContractInfo(contractId)
@@ -73,7 +67,8 @@ if (!fs.existsSync('.env') && !process.env.ALGOD_SERVER) {
     for (let batch of batches) {
       const txns = await Promise.all(
         batch.map(
-          async (nft) => await getAlgorandNFTTransaction(client, creatorAccount, nft, unitName, mutableMetadata)
+          async (nft) =>
+            await getAlgorandNFTTransaction(client, creatorAccount, contractId, nft, unitName, mutableMetadata)
         )
       )
 
@@ -106,7 +101,10 @@ if (!fs.existsSync('.env') && !process.env.ALGOD_SERVER) {
     )
   } catch (error) {
     handleError(error)
+    console.timeEnd('Minting')
     process.exit(1)
+  } finally {
+    console.timeEnd('Minting')
   }
 })()
 
@@ -257,6 +255,7 @@ async function getTerraNFT(contractId: string, tokenId: string): Promise<TerraNF
 async function getAlgorandNFTTransaction(
   client: Algodv2,
   creatorAccount: Account,
+  contractId: string,
   nft: NFT,
   unitName: string,
   mutableMetadata: boolean
@@ -275,47 +274,12 @@ async function getAlgorandNFTTransaction(
         externalUrl: nft.externalUrl,
         properties: nft.traits,
       } as Arc69Metadata),
-      ...{ terraTokenId: nft.tokenId },
+      ...{ terraTokenId: nft.tokenId, terraContractId: contractId },
     } as any,
     skipSending: true,
-    note: `Migration via the Terra -> Algorand NFT migration service. Original token ID: ${nft.tokenId}`,
   }
 
   // Create NFT
   const { transaction } = await createNonFungibleToken(mintParameters, client)
   return transaction
-}
-
-async function createAlgorandNFT(
-  client: Algodv2,
-  indexer: IndexerClient,
-  creatorAccount: Account,
-  existingTokenId: string,
-  name: string,
-  unitName: string,
-  url: string,
-  metadata: Arc69Metadata,
-  mutableMetadata: boolean
-) {
-  const existingAssets = await getExistingAssets(creatorAccount, [name], indexer)
-  if (existingAssets.length > 0) {
-    const existingAsset = existingAssets[0]
-    console.log(`Found existing asset #${existingAsset.asset.index} ${existingAsset.asset.params.name}; skipping...`)
-  } else {
-    let mintParameters: CreateAssetParamsBase
-    mintParameters = {
-      assetName: name,
-      unitName: unitName,
-      creator: creatorAccount,
-      managerAddress: mutableMetadata ? creatorAccount.addr : undefined,
-      url: url,
-      arc69Metadata: { ...metadata, terraTokenId: existingTokenId } as any,
-    }
-
-    // Create NFT
-    const { transaction, confirmation } = await createNonFungibleToken(mintParameters, client)
-    const assetIndex = confirmation!['asset-index']!
-    const txID = transaction.txID()
-    console.log(`${name} -> asset #${assetIndex} (TX: ${txID})`)
-  }
 }
