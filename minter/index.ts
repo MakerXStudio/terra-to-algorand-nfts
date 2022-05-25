@@ -272,6 +272,7 @@ async function getAlgorandNFTTransaction(
         mediaType: mediaType,
         description: nft.description,
         externalUrl: nft.externalUrl,
+        mediaUrl: nft.imageUrl,
         properties: nft.traits,
       } as Arc69Metadata),
       ...{ terraTokenId: nft.tokenId, terraContractId: contractId },
