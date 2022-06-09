@@ -4,7 +4,7 @@
     "lib": ["DOM", "DOM.Iterable", "ES2019"],
     "isolatedModules": true,
     "esModuleInterop": true,
-    "jsx": "react",
+    "jsx": "react-jsx",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "target": "ES2019",
@@ -16,9 +16,9 @@
     },
     "skipLibCheck": true,
     "experimentalDecorators": true,
-
-    // Remix takes care of building everything in `remix build`.
-    "noEmit": true
+    "noEmit": true,
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true
   },
   "exclude": ["node_modules", "build", "public/_static/build", ".cache"]
 }

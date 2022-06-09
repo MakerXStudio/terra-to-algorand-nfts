@@ -8,7 +8,7 @@ limiter.on('failed', async (error, jobInfo) => {
   if (error.status === 429 && error.response?.request?.method === 'GET' && jobInfo.retryCount < 5) return 250
 })
 
-const RateLimit = function (target: any, propertyKey: string, descriptor?: PropertyDescriptor): void {
+const RateLimit = function (target: any, propertyKey: string | symbol, descriptor?: PropertyDescriptor): void {
   if (!descriptor) return
   const original = descriptor.value
   descriptor.value = function () {

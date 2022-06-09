@@ -38,7 +38,9 @@ export class FileSystemObjectCache implements ObjectCache {
       try {
         const existingJson = existingCache ? await fs.readFile(cachePath, { encoding: 'utf-8' }) : undefined
         const existing = existingJson ? (JSON.parse(existingJson) as T) : undefined
+        console.time(cacheKey)
         const value = await generator(existing)
+        console.timeEnd(cacheKey)
         await fs.writeFile(cachePath, JSON.stringify(value, null, 2), {
           encoding: 'utf-8',
         })
